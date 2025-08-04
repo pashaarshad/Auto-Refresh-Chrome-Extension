@@ -1,25 +1,29 @@
 {
   "manifest_version": 3,
   "name": "Auto Refresh Extension",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automatically refresh any website every 3 seconds with a 5-second initial delay.",
   "permissions": [
     "tabs",
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_start"
     }
   ],
   "action": {
-    "default_title": "Auto Refresh Extension"
+    "default_title": "Auto Refresh Extension - Click to check status",
+    "default_popup": "popup.html"
   }
 }

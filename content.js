@@ -15,6 +15,7 @@ function isValidPage() {
 function startAutoRefresh() {
     if (refreshStarted || !isValidPage()) return;
     
+    console.log('Content script: Starting auto refresh for', window.location.href);
     refreshStarted = true;
     
     // Wait 5 seconds initially before starting the refresh cycle
@@ -22,6 +23,7 @@ function startAutoRefresh() {
         // Then refresh every 3 seconds
         refreshInterval = setInterval(() => {
             if (isValidPage()) {
+                console.log('Content script: Refreshing page');
                 window.location.reload();
             }
         }, 3000);
@@ -32,8 +34,19 @@ function startAutoRefresh() {
 window.addEventListener('beforeunload', () => {
     if (refreshInterval) {
         clearInterval(refreshInterval);
+        refreshStarted = false;
     }
 });
+
+// Try to connect to background script to ensure it's active
+try {
+    const port = chrome.runtime.connect();
+    port.onDisconnect.addListener(() => {
+        console.log('Content script: Disconnected from background');
+    });
+} catch (error) {
+    console.log('Content script: Could not connect to background');
+}
 
 // Start auto-refresh when content script loads
 if (document.readyState === 'loading') {
@@ -41,3 +54,11 @@ if (document.readyState === 'loading') {
 } else {
     startAutoRefresh();
 }
+
+// Additional safety: start refresh after a delay if not already started
+setTimeout(() => {
+    if (!refreshStarted && isValidPage()) {
+        console.log('Content script: Backup initialization');
+        startAutoRefresh();
+    }
+}, 2000);
