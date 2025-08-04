@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Auto Refresh Extension",
+  "version": "1.0",
+  "description": "Automatically refresh any website every three seconds with a 5-second initial delay.",
+  "permissions": [
+    "tabs",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "exclude_matches": ["chrome://*/*", "chrome-extension://*/*"]
+    }
+  ]
+}
