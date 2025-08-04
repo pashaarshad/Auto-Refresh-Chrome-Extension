@@ -17,7 +17,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["src/content.js"],
-      "exclude_matches": ["chrome://*/*", "chrome-extension://*/*"]
+      "exclude_matches": ["chrome://*/*"]
     }
   ],
   "action": {
