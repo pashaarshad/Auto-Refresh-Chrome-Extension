@@ -1,7 +1,8 @@
+// Background service worker for Auto Refresh Extension
 // Track active tabs and their refresh intervals
 let activeRefreshIntervals = new Map();
 
-// Start refreshing when extension is installed or enabled
+// Initialize when extension starts
 chrome.runtime.onStartup.addListener(() => {
     initializeAutoRefresh();
 });
@@ -12,16 +13,23 @@ chrome.runtime.onInstalled.addListener(() => {
 
 async function initializeAutoRefresh() {
     try {
-        // Get all active tabs and start auto-refresh for each
         const tabs = await chrome.tabs.query({});
         tabs.forEach(tab => {
-            if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+            if (isValidUrl(tab.url)) {
                 startRefreshingTab(tab.id);
             }
         });
     } catch (error) {
         console.error('Error initializing auto refresh:', error);
     }
+}
+
+function isValidUrl(url) {
+    return url && 
+           !url.startsWith('chrome://') && 
+           !url.startsWith('chrome-extension://') &&
+           !url.startsWith('edge://') &&
+           !url.startsWith('about:');
 }
 
 function startRefreshingTab(tabId) {
@@ -36,8 +44,7 @@ function startRefreshingTab(tabId) {
             try {
                 const tab = await chrome.tabs.get(tabId);
                 
-                // Only refresh if tab is not a chrome:// or extension page
-                if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+                if (isValidUrl(tab.url)) {
                     await chrome.tabs.reload(tabId);
                 }
             } catch (error) {
@@ -51,17 +58,16 @@ function startRefreshingTab(tabId) {
     }, 5000);
 }
 
-// Start auto-refresh for new tabs
+// Handle new tabs
 chrome.tabs.onCreated.addListener((tab) => {
-    if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+    if (isValidUrl(tab.url)) {
         startRefreshingTab(tab.id);
     }
 });
 
-// Handle tab updates (when user navigates to a new URL)
+// Handle tab updates (navigation)
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && tab.url && 
-        !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+    if (changeInfo.status === 'complete' && isValidUrl(tab.url)) {
         startRefreshingTab(tabId);
     }
 });

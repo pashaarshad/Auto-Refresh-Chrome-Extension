@@ -1,12 +1,19 @@
-// Content script for auto-refresh extension
-// This script runs on every webpage and handles the refresh logic
+// Content script for Auto Refresh Extension
+// This runs on every webpage and provides backup refresh functionality
 
 let refreshStarted = false;
 let refreshInterval;
 
-// Function to start the auto-refresh cycle
+function isValidPage() {
+    const url = window.location.href;
+    return !url.startsWith('chrome://') && 
+           !url.startsWith('chrome-extension://') &&
+           !url.startsWith('edge://') &&
+           !url.startsWith('about:');
+}
+
 function startAutoRefresh() {
-    if (refreshStarted) return;
+    if (refreshStarted || !isValidPage()) return;
     
     refreshStarted = true;
     
@@ -14,9 +21,7 @@ function startAutoRefresh() {
     setTimeout(() => {
         // Then refresh every 3 seconds
         refreshInterval = setInterval(() => {
-            // Only refresh if we're still on a regular webpage (not chrome:// pages)
-            if (!window.location.href.startsWith('chrome://') && 
-                !window.location.href.startsWith('chrome-extension://')) {
+            if (isValidPage()) {
                 window.location.reload();
             }
         }, 3000);
@@ -31,4 +36,8 @@ window.addEventListener('beforeunload', () => {
 });
 
 // Start auto-refresh when content script loads
-startAutoRefresh();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startAutoRefresh);
+} else {
+    startAutoRefresh();
+}
