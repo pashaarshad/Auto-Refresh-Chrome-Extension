@@ -10,15 +10,18 @@ chrome.runtime.onInstalled.addListener(() => {
     initializeAutoRefresh();
 });
 
-function initializeAutoRefresh() {
-    // Get all active tabs and start auto-refresh for each
-    chrome.tabs.query({}, (tabs) => {
+async function initializeAutoRefresh() {
+    try {
+        // Get all active tabs and start auto-refresh for each
+        const tabs = await chrome.tabs.query({});
         tabs.forEach(tab => {
             if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
                 startRefreshingTab(tab.id);
             }
         });
-    });
+    } catch (error) {
+        console.error('Error initializing auto refresh:', error);
+    }
 }
 
 function startRefreshingTab(tabId) {
@@ -29,20 +32,19 @@ function startRefreshingTab(tabId) {
     
     // Wait 5 seconds initially, then refresh every 3 seconds
     setTimeout(() => {
-        const refreshInterval = setInterval(() => {
-            chrome.tabs.get(tabId, (tab) => {
-                if (chrome.runtime.lastError) {
-                    // Tab no longer exists, clear the interval
-                    clearInterval(activeRefreshIntervals.get(tabId));
-                    activeRefreshIntervals.delete(tabId);
-                    return;
-                }
+        const refreshInterval = setInterval(async () => {
+            try {
+                const tab = await chrome.tabs.get(tabId);
                 
                 // Only refresh if tab is not a chrome:// or extension page
                 if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
-                    chrome.tabs.reload(tabId);
+                    await chrome.tabs.reload(tabId);
                 }
-            });
+            } catch (error) {
+                // Tab no longer exists, clear the interval
+                clearInterval(activeRefreshIntervals.get(tabId));
+                activeRefreshIntervals.delete(tabId);
+            }
         }, 3000);
         
         activeRefreshIntervals.set(tabId, refreshInterval);
